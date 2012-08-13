@@ -1,15 +1,13 @@
 $commands.all << {
-	name: 'info',
+    name: 'info',
     help: 'Shows files status and current branches.',
     options: [
-        [:verbose, 'Show information', short: '-v']
+        [:verbose, 'Show all the nitty-gritty details', short: '-v'],
+        [:test, 'see if this works', default: 'itworks']
     ],
     action: lambda do |opts, args|
-    	puts 'CURRENT COMMIT:'
-    	puts `git log --graph --all --format=format:'%C(bold)%h%C(reset) %C(bold green)(%cr)%C(reset) %C(bold white)%cn%C(reset) %C(white)%s%C(reset)%C(bold yellow)%d%C(reset)' --abbrev-commit --date=relative -n 1`
-    	puts 'BRANCHES:'
-    	system('git branch')
-    	puts 'STATUS:'
-    	system('git status')
+      $commands.git.log_graph
+      $commands.git.branch
+      $commands.git.status
     end
 }

@@ -1,6 +1,8 @@
+require 'ezgit/git'
+
 class Commands
 
-  attr_accessor :all, :symbols, :names, :help_list, :options
+  attr_accessor :all, :symbols, :names, :help_list, :options, :git
 
 
   def initialize
@@ -26,6 +28,7 @@ class Commands
 
 
   def process
+    @git = Git.new(@options)
     @cmd = ARGV.shift
     matched = false
     @all.each do |current|
@@ -56,7 +59,7 @@ HELP_DESCRIPTION
       end
     end
     Trollop::die "unknown subcommand #{@cmd.inspect}" if not matched
-    if $commands.options[:dry_run]
+    if $commands.options[:debug]
       puts "Global options: #{$commands.options.inspect}"
       puts "Subcommand: #{@cmd.inspect}"
       puts "Subcommand options: #{@cmd_opts.inspect}"

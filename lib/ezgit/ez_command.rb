@@ -14,7 +14,8 @@ Usage:
 #{subcommand_help_list}
    [options] are:
 HELP_DESCRIPTION
-		  opt :dry_run, "Forces all commands to be passive.", :short => "-n"
+		  opt :dry_run, 'Forces all commands to be passive.', short: '-n'
+		  opt :debug, 'Shows command level debug info.', short: '-d'
 		  stop_on subcommand_names
 		end
 	end
