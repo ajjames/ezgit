@@ -15,3 +15,8 @@ Usage:
   --dry-run, -n:   Forces all commands to be passive.
   --version, -v:   Print version and exit
      --help, -h:   Show this message
+
+Acknowledgements:
+
+This project makes use of Trollop (Copyright 2007 William Morgan). 
+An excellent light-weight command-line parser.

@@ -10,7 +10,7 @@ Gem::Specification.new do |s|
   s.description  = 'EZGit is a simple interface for working with git repositories'
   s.authors      = ['AJ James']
   s.email        = 'ajjames@msn.com'
-  s.homepage     = 'http://rubygemgem.org/gems/ezgit'
+  s.homepage     = 'http://github.com/ajjames/ezgit'
   s.license      = 'MIT'
   s.executables  << 'ez'
 end
