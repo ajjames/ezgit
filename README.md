@@ -1,5 +1,8 @@
 EZGit
 =====
+http://github.com/ajjames/ezgit
+http://rubygems.org/gems/ezgit
+
 (This project is currently under development)
 
 EZGit is a simple interface for working with git repositories.
@@ -17,6 +20,4 @@ Usage:
      --help, -h:   Show this message
 
 Acknowledgements:
-
-This project makes use of Trollop (Copyright 2007 William Morgan). 
-An excellent light-weight command-line parser.
+  -This project makes use of Trollop (Copyright 2007 William Morgan). An excellent light-weight command-line parser.
