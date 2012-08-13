@@ -5,7 +5,7 @@ class EzCommand
 		return Trollop::options do
 		  version Ezgit::VERSION
 		  banner <<-HELP_DESCRIPTION
-Ezgit `ez` is a simplified command interface for working with git repositories.
+EZGit is a simple interface for working with git repositories.
 
 Usage:
         ez [options] [commands]
@@ -14,7 +14,7 @@ Usage:
 #{subcommand_help_list}
    [options] are:
 HELP_DESCRIPTION
-		  opt :dry_run, "Don't actually do anything", :short => "-n"
+		  opt :dry_run, "Forces all commands to be passive.", :short => "-n"
 		  stop_on subcommand_names
 		end
 	end
