@@ -17,20 +17,30 @@ class Git
 
   def branch
     puts ''
-    #YOUR BRANCHES
-    puts 'YOUR BRANCHES:'.bold
-    out = `git branch`
-    out.split("\n").each do |br|
+    #COLLECT REMOTE BRANCHES
+    puts 'BRANCHES:'.bold
+    branches = []
+    remote = `git branch -r`.split("\n")
+    remote.each do |br|
+      branches << br.gsub(/ \*?\s+origin\//, '') unless br.include?('origin/HEAD')
+    end
+    #COLLECT LOCAL BRANCHES
+    local = `git branch`
+    #Combine the list and mark the current branch
+    local.split("\n").each do |br|
       is_current = br.include?('*')
       br.gsub!(/\*?\s+/, '')
-      br = "#{br} <-- CURRENT" if is_current
-      puts "  #{br}".yellow
+      if is_current
+        #add an indicator if it is the current branch
+        branches.collect! { |b|
+          b.eql?(br) ? "#{br} <-- CURRENT" : b
+        }
+      else
+        branches << br
+      end
     end
-    #REMOTE BRANCHES
-    puts 'REMOTE BRANCHES:'.bold
-    out = `git branch -r`
-    out.split("\n").each do |br|
-      puts '  ' + br.gsub(/ \*?\s+origin\//, '').yellow if not br.include?('origin/HEAD')
+    branches.select{|br| branches.count(br) == 1}.each do |br|
+      puts "  #{br}".yellow
     end
   end
 
