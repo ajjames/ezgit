@@ -33,7 +33,7 @@ class Git
       if is_current
         #add an indicator if it is the current branch
         branches.collect! { |b|
-          b.eql?(br) ? "#{br} <-- CURRENT" : b
+          b.eql?(br) ? "#{br} <-- CURRENT".bold : b
         }
       else
         branches << br
