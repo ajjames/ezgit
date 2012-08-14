@@ -1,4 +1,4 @@
 #!/usr/bin/env ruby
 $:.unshift(File.dirname(__FILE__))
 require 'lib/ezgit/version'
-exec("gem uninstall ezgit;gem build ezgit.gemspec;gem install ./ezgit-#{Ezgit::VERSION}.gem")
+exec("gem uninstall -x ezgit;gem build ezgit.gemspec;gem install -d ./ezgit-#{Ezgit::VERSION}.gem")

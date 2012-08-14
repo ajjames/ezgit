@@ -48,7 +48,7 @@ class Git
   def status
     puts ''
     puts 'CURRENT CHANGES:'.white.bold
-    system('git status -s')
+    system('git status -bs')
   end
 
 
