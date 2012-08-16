@@ -93,6 +93,8 @@ class Git
 
 
   def display_sync_status
+    #TODO: What if I somehow ended up in a headless state?? Gracefully fail and recommend 'ez switch <branch>'
+    #TODO: Unless you have changes, in which case those should be handled
     puts ''
     puts 'SYNC STATUS:'.white.bold
     stat, count = check_remote_status
@@ -182,6 +184,7 @@ class Git
 
 
   def checkout(args)
+    #TODO: What if the given value is not a valid branch?? You would go headless!
     return puts "Please specify a branch name.".yellow.bold if args.count < 1
     return puts "Invalid number of arguments. Please specify only a branch name.".yellow.bold if args.count > 1
     has_changes, changes = check_local_changes
