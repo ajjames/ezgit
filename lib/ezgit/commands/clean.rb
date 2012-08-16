@@ -11,8 +11,10 @@ $commands.all << {
 $commands.all << {
     name: 'clean!',
     help: 'Deletes all changes and files to resemble only what is checked in.',
-    options: [],
+    options: [
+        [:force, 'Automatically approve and bypass the confirmation prompt.', short: '-f']
+    ],
     action: lambda do |opts, args|
-      $commands.git.clean!
+      $commands.git.clean!(opts)
     end
 }

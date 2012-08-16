@@ -42,6 +42,7 @@ class Git
 
 
   def display_log_graph(count = 5)
+    #TODO: This will always show the top of the tree. What if I'm more than 5 commits down??
     puts ''
     puts "REPOSITORY TREE".white.bold + "(last #{count} commits)"
     puts `git log --graph --all --format=format:"#{CYAN}%h #{CLEAR + CYAN}(%cr) #{CYAN}%cn #{CLEAR + WHITE}%s#{CYAN + BOLD}%d#{CLEAR}" --abbrev-commit --date=relative -n #{count}`
@@ -102,19 +103,19 @@ class Git
     case stat
       when :ahead
         puts "  Your #{current_branch.bold + CYAN} branch is ahead of the remote by #{count} #{commit_s}.".cyan
-        puts "  (Use 'ez push' to update the remote.)".cyan
+        puts "  (Use 'ez sync' to update the remote.)".cyan
       when :behind
         puts "  Your #{current_branch.bold + YELLOW} branch is behind the remote by #{count} #{commit_s}.".yellow
-        puts "  (Use 'ez pull' to get the new changes.)".yellow
+        puts "  (Use 'ez sync' to get the new changes.)".yellow
       when :rebase
         puts "  Your #{current_branch} branch has diverged #{count} #{commit_s} from the remote.".red.bold
         puts "  (Use must use git directly to put them back in sync.)".red.bold
       when :no_remote
         puts "  Your #{current_branch.bold + CYAN} branch does not yet exist on the remote.".cyan
-        puts "  (Use 'ez push' to update the remote.)".cyan
+        puts "  (Use 'ez sync' to update the remote.)".cyan
       else
         puts "  Your #{current_branch.bold + GREEN} branch is in sync with the remote.".green
-        puts "  (Use 'ez pull' to ensure it stays in sync.)".green
+        puts "  (Use 'ez sync' to ensure it stays in sync.)".green
     end
   end
 
@@ -134,12 +135,12 @@ class Git
     has_changes, changes = check_local_changes(opts)
     puts "  No changes.".green unless has_changes
     changes.collect! { |line|
-      line.sub!('!! ', CYAN +                 "  ignore  " + CLEAR)
-      line.gsub!(/ U |U  /, RED + BOLD +      "   MERGE  " + CLEAR)
-      line.gsub!(/ D |D  /, RED + BOLD +      "  Delete  " + CLEAR)
-      line.gsub!(/.R |R. /, YELLOW + BOLD +   "  Rename  " + CLEAR)
+      line.sub!('!! ', CYAN + "  ignore  " + CLEAR)
+      line.gsub!(/ U |U  /, RED + BOLD + "   MERGE  " + CLEAR)
+      line.gsub!(/ D |D  /, RED + BOLD + "  Delete  " + CLEAR)
+      line.gsub!(/.R |R. /, YELLOW + BOLD + "  Rename  " + CLEAR)
       line.gsub!(/A  |\?\? /, YELLOW + BOLD + "     Add  " + CLEAR)
-      line.gsub!(/.M |M. /, YELLOW + BOLD +   "  Change  " + CLEAR)
+      line.gsub!(/.M |M. /, YELLOW + BOLD + "  Change  " + CLEAR)
       line
     }
     puts changes.sort!
@@ -160,18 +161,20 @@ class Git
   end
 
 
-  def clean!
+  def clean!(opts)
     puts `git  clean -dfxn`
     return unless @dry_run.empty?
-    print 'proceed(y/n)? '.bold
-    begin
-      system("stty raw -echo")
-      input = STDIN.getc
-    ensure
-      system("stty -raw echo")
+    unless opts[:force]
+      print 'proceed(y/n)? '.bold
+      begin
+        system("stty raw -echo")
+        input = STDIN.getc
+      ensure
+        system("stty -raw echo")
+      end
+      return unless input.to_s.downcase.eql?('y')
+      puts input.to_s
     end
-    return unless input.to_s.downcase.eql?('y')
-    puts input.to_s
     reset_hard
     puts `git  clean -dfx #{@dry_run}`
   end
@@ -211,12 +214,6 @@ class Git
 
 
   def pull
-    has_changes, changes = check_local_changes
-    if has_changes
-      puts "Cannot pull when you have unresolved changes".yellow.bold
-      display_current_changes
-      return
-    end
     `git fetch -p #{@dry_run}`
     stat, count = check_remote_status
     case stat
@@ -229,8 +226,8 @@ class Git
         puts `git rebase #{remote_branch}`
         #TODO: CONFLICT HANDLING?
         puts 'TODO: CONFLICT HANDLING?'
-        display_log_graph
-        display_sync_status
+      display_log_graph
+      display_sync_status
       when :behind
         unless @dry_run.empty?
           puts "would branch to #{remote_branch}"
@@ -238,9 +235,25 @@ class Git
           return
         end
         puts `git reset --hard #{remote_branch}`
-        display_log_graph
+      display_log_graph
+      display_sync_status
+      else #:up_to_date | :no_remote | :ahead
         display_sync_status
-      else
+    end
+  end
+
+
+  def push
+    stat, count = check_remote_status
+    case stat
+      when :rebase || :behind
+        puts "  The remote has been updated since you began this sync.".yellow.bold
+        puts "  Try running 'ez sync' again".yellow.bold
+        display_sync_status
+      when :no_remote || :ahead
+        puts `git push -u #{remote_branch.sub('/', ' ')}`
+        display_sync_status
+      else #:up_to_date
         display_sync_status
     end
   end
