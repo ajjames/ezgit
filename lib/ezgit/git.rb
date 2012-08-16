@@ -1,5 +1,4 @@
 require 'open3'
-require 'ezgit/string'
 
 class Git
 
@@ -11,44 +10,54 @@ class Git
   def log_graph(count = 5)
     puts ''
     puts "REPOSITORY TREE".white.bold + "(last #{count} commits)"
-    puts `git log --graph --all --format=format:'%h %C(blue)(%cr)%C(reset) %C(green)%cn%C(reset) %C(white)%s%C(reset)%C(yellow)%d%C(reset)' --abbrev-commit --date=relative -n #{count}`
+    puts `git log --graph --all --format=format:"#{GREEN + BOLD}%h #{CLEAR + CYAN}(%cr) #{CYAN + BOLD}%cn #{CLEAR + WHITE}%s#{YELLOW}%d#{CLEAR}" --abbrev-commit --date=relative -n #{count}`
   end
 
 
   def branch
     puts ''
-    #COLLECT REMOTE BRANCHES
     puts 'BRANCHES:'.bold
-    branches = []
-    remote = `git branch -r`.split("\n")
-    remote.each do |br|
-      branches << br.gsub(/ \*?\s+origin\//, '') unless br.include?('origin/HEAD')
-    end
-    #COLLECT LOCAL BRANCHES
-    local = `git branch`
-    #Combine the list and mark the current branch
-    local.split("\n").each do |br|
-      is_current = br.include?('*')
-      br.gsub!(/\*?\s+/, '')
-      if is_current
-        #add an indicator if it is the current branch
-        branches.collect! { |b|
-          b.eql?(br) ? "#{br} <-- CURRENT".bold : b
-        }
-      else
-        branches << br
-      end
-    end
-    branches.select{|br| branches.count(br) == 1}.each do |br|
+    # Get remote name.  It may not be 'origin'
+    origin = `git remote show`.gsub(/\s/, '')
+    # create possible regexes to remove the HEAD entry
+    strip_head = "  remotes\/#{origin}\/HEAD -> #{origin}\/master"
+    strip_head_break = "#{strip_head}\n"
+    break_strip_head = "\n#{strip_head}"
+    # get all branches from git, remove the HEAD entry, and normalize (strip 'remotes/origin/', & strip spaces)
+    git_a = `git branch -a --no-color`.gsub(/#{break_strip_head}/, '').gsub(/#{strip_head_break}/, '').gsub(/#{strip_head}/, '').gsub(/ /, '').gsub(/remotes\/#{origin}\//, '')
+    # grab the current branch name
+    current_branch = git_a.match(/\*(.+)\n/)[1]
+    # strip the current branch indicator and split into an array
+    all_branches = git_a.gsub(/\*/, '').split("\n")
+    all_branches.uniq!
+    all_branches.sort!
+    #add an indicator if it is the current branch
+    all_branches.collect! { |b| b.eql?(current_branch) ? "#{b} <-- CURRENT".bold : b }
+    # output the list
+    all_branches.each do |br|
       puts "  #{br}".yellow
     end
   end
 
 
-  def status
+  def status(opts)
+    ignored = opts[:ignored] ? '--ignored' : ''
     puts ''
     puts 'CURRENT CHANGES:'.white.bold
-    system('git status -bs')
+    # system('git status -bs')
+    stdin, stdout, stderr = Open3.popen3("git status --porcelain #{ignored}")
+    changes = stdout.readlines
+    puts "  No changes.".green unless changes.any?
+    changes.collect! { |line|
+      line.sub!('!! ', CYAN +                "    ignore  " + CLEAR)
+      line.gsub!(/ U |U  / , YELLOW + BOLD + "     merge  " + CLEAR)
+      line.gsub!(/ D |D  / , RED + BOLD +    "    delete  " + CLEAR)
+      line.gsub!(/.R |R. / , RED + BOLD +    "    rename  " + CLEAR)
+      line.gsub!(/A  |\?\? / , CYAN + BOLD + "       add  " + CLEAR)
+      line.gsub!(/.M |M. / , RED + BOLD +    "    change  " + CLEAR)
+      line
+    }
+    puts changes.sort!
   end
 
 

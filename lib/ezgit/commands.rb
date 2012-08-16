@@ -22,7 +22,7 @@ class Commands
       current_symbol = @all.last[:name]
       @symbols << current_symbol
       @names << current_symbol.to_s
-      @help_list << "\t#{@names.last}\t#{@all.last[:help].to_s}\n"
+      @help_list << "\t#{@names.last.cyan.bold}\t#{@all.last[:help].to_s.bold}\n"
     end
   end
 

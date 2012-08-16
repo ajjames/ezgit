@@ -2,12 +2,15 @@ $commands.all << {
     name: 'info',
     help: 'Shows files status and current branches.',
     options: [
-        [:verbose, 'Show all the nitty-gritty details', short: '-v'],
-        [:test, 'see if this works', default: 'itworks']
+        [:ignored, 'Lists the files are being ignored.', short: '-i']
     ],
     action: lambda do |opts, args|
+      puts '________________________________'
+      puts ''
+      puts "        EZGit info".bold
       $commands.git.log_graph
       $commands.git.branch
-      $commands.git.status
+      $commands.git.status(opts)
+      puts '________________________________'
     end
 }

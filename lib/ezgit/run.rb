@@ -1,3 +1,4 @@
+require 'ezgit/string'
 require 'ezgit/trollop'
 require 'ezgit/commands'
 require 'ezgit/ez_command'
