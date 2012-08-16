@@ -41,14 +41,14 @@ class Git
   end
 
 
-  def log_graph(count = 5)
+  def display_log_graph(count = 5)
     puts ''
     puts "REPOSITORY TREE".white.bold + "(last #{count} commits)"
-    puts `git log --graph --all --format=format:"#{GREEN + BOLD}%h #{CLEAR + CYAN}(%cr) #{CYAN + BOLD}%cn #{CLEAR + WHITE}%s#{YELLOW}%d#{CLEAR}" --abbrev-commit --date=relative -n #{count}`
+    puts `git log --graph --all --format=format:"#{CYAN}%h #{CLEAR + CYAN}(%cr) #{CYAN}%cn #{CLEAR + WHITE}%s#{CYAN + BOLD}%d#{CLEAR}" --abbrev-commit --date=relative -n #{count}`
   end
 
 
-  def branch_list_with_current
+  def display_branch_list_with_current
     puts ''
     puts 'BRANCHES:'.bold
     remove_refs_regx = /([\* ])|(.*\/)/
@@ -63,7 +63,7 @@ class Git
     brs.sort!
     # output the list
     brs.each do |br|
-      puts "  #{br}".yellow
+      puts "  #{br}".cyan
     end
   end
 
@@ -92,7 +92,7 @@ class Git
   end
 
 
-  def sync_status
+  def display_sync_status
     puts ''
     puts 'SYNC STATUS:'.white.bold
     stat, count = check_remote_status
@@ -100,37 +100,44 @@ class Git
     case stat
       when :ahead
         puts "  Your #{current_branch.bold + CYAN} branch is ahead of the remote by #{count} #{commit_s}.".cyan
-        puts "    Use 'ez push' to update the remote.".cyan
+        puts "  (Use 'ez push' to update the remote.)".cyan
       when :behind
-        puts "  Your #{current_branch.bold} branch is behind the remote by #{count} #{commit_s}.".yellow
-        puts "    Use 'ez pull' to get the new changes.".yellow
+        puts "  Your #{current_branch.bold + YELLOW} branch is behind the remote by #{count} #{commit_s}.".yellow
+        puts "  (Use 'ez pull' to get the new changes.)".yellow
       when :rebase
         puts "  Your #{current_branch} branch has diverged #{count} #{commit_s} from the remote.".red.bold
-        puts "    Use must use git directly to put them back in sync.".red.bold
+        puts "  (Use must use git directly to put them back in sync.)".red.bold
       when :no_remote
         puts "  Your #{current_branch.bold + CYAN} branch does not yet exist on the remote.".cyan
-        puts "    Use 'ez push' to update the remote.".cyan
+        puts "  (Use 'ez push' to update the remote.)".cyan
       else
-        puts "   Your #{current_branch.bold + GREEN} branch is in sync with the remote.".green
-        puts "    Use 'ez pull' to ensure it stays in sync.".green
+        puts "  Your #{current_branch.bold + GREEN} branch is in sync with the remote.".green
+        puts "  (Use 'ez pull' to ensure it stays in sync.)".green
     end
   end
 
 
-  def status(opts)
-    ignored = opts[:ignored] ? '--ignored' : ''
-    puts ''
-    puts 'CURRENT CHANGES:'.white.bold
+  #returns (bool has_changes?, Array changes)
+  def check_local_changes(opts = nil)
+    ignored = (opts.nil? || opts[:ignored] == false) ? '' : '--ignored'
     stdin, stdout, stderr = Open3.popen3("git status --untracked-files=all --porcelain #{ignored}")
     changes = stdout.readlines
-    puts "  No changes.".green unless changes.any?
+    return changes.any?, changes
+  end
+
+
+  def display_current_changes(opts = nil)
+    puts ''
+    puts 'CHANGES TO BE COMMITTED:'.white.bold
+    has_changes, changes = check_local_changes(opts)
+    puts "  No changes.".green unless has_changes
     changes.collect! { |line|
-      line.sub!('!! ', CYAN + "  ignore  " + CLEAR)
-      line.gsub!(/ U |U  /, YELLOW + BOLD + "   merge  " + CLEAR)
-      line.gsub!(/ D |D  /, RED + BOLD + "  delete  " + CLEAR)
-      line.gsub!(/.R |R. /, RED + BOLD + "  rename  " + CLEAR)
-      line.gsub!(/A  |\?\? /, CYAN + BOLD + "     add  " + CLEAR)
-      line.gsub!(/.M |M. /, RED + BOLD + "  change  " + CLEAR)
+      line.sub!('!! ', CYAN +                 "  ignore  " + CLEAR)
+      line.gsub!(/ U |U  /, RED + BOLD +      "   MERGE  " + CLEAR)
+      line.gsub!(/ D |D  /, RED + BOLD +      "  Delete  " + CLEAR)
+      line.gsub!(/.R |R. /, YELLOW + BOLD +   "  Rename  " + CLEAR)
+      line.gsub!(/A  |\?\? /, YELLOW + BOLD + "     Add  " + CLEAR)
+      line.gsub!(/.M |M. /, YELLOW + BOLD +   "  Change  " + CLEAR)
       line
     }
     puts changes.sort!
@@ -138,10 +145,7 @@ class Git
 
 
   def clone(args)
-    if args.count < 1 || args.count > 2
-      puts 'invalid number of arguments. Requires a source. (Destination is optional.)'
-      return
-    end
+    return puts 'invalid number of arguments. Requires a source. (Destination is optional.)' if args.count < 1 || args.count > 2
     return if not @dry_run.empty?
     puts out = `git clone #{args.first} #{args[1]}`
     repo_name = args[1] || out.split('\'')[1]
@@ -177,8 +181,50 @@ class Git
   end
 
 
-  def checkout(opts, args)
+  def checkout(args)
+    return puts "Please specify a branch name.".yellow.bold if args.count < 1
+    return puts "Invalid number of arguments. Please specify only a branch name.".yellow.bold if args.count > 1
+    has_changes, changes = check_local_changes
+    if has_changes
+      puts "Cannot switch branches when you have unresolved changes".yellow.bold
+      display_current_changes
+      return
+    end
+    puts `git checkout -f #{args[0]}`
+  end
 
+
+  def pull
+    has_changes, changes = check_local_changes
+    if has_changes
+      puts "Cannot pull when you have unresolved changes".yellow.bold
+      display_current_changes
+      return
+    end
+    `git fetch -p #{@dry_run}`
+    stat, count = check_remote_status
+    case stat
+      when :rebase
+        unless @dry_run.empty?
+          puts 'would merge changes'
+          display_sync_status
+          return
+        end
+        puts `git rebase #{remote_branch}`
+        display_log_graph
+        display_sync_status
+      when :behind
+        unless @dry_run.empty?
+          puts "would branch to #{remote_branch}"
+          display_sync_status
+          return
+        end
+        puts `git reset --hard #{remote_branch}`
+        display_log_graph
+        display_sync_status
+      else
+        display_sync_status
+    end
   end
 
 

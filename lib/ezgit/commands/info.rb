@@ -8,10 +8,10 @@ $commands.all << {
       puts '________________________________'
       puts ''
       puts "  EZGit info".bold
-      $commands.git.log_graph
-      $commands.git.branch_list_with_current
-      $commands.git.sync_status
-      $commands.git.status(opts)
+      $commands.git.display_log_graph
+      $commands.git.display_branch_list_with_current
+      $commands.git.display_current_changes(opts)
+      $commands.git.display_sync_status
       puts '________________________________'
     end
 }

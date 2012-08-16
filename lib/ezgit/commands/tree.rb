@@ -5,6 +5,6 @@ $commands.all << {
     options: [],
     action: lambda do |opts, args|
       count = args[0] || 20
-      $commands.git.log_graph(count)
+      $commands.git.display_log_graph(count)
     end
 }
