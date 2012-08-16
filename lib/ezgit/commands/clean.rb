@@ -13,7 +13,6 @@ $commands.all << {
     help: 'Deletes all changes and files to resemble only what is checked in.',
     options: [],
     action: lambda do |opts, args|
-      $commands.git.reset_hard
       $commands.git.clean!
     end
 }

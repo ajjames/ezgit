@@ -7,9 +7,9 @@ $commands.all << {
     action: lambda do |opts, args|
       puts '________________________________'
       puts ''
-      puts "        EZGit info".bold
+      puts "  EZGit info".bold
       $commands.git.log_graph
-      $commands.git.branch
+      $commands.git.branch_list_with_current
       $commands.git.status(opts)
       puts '________________________________'
     end
