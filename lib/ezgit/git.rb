@@ -194,6 +194,19 @@ class Git
   end
 
 
+  def commit(args)
+    return puts "Please specify a message.".yellow.bold if args.count < 1
+    return puts "Invalid number of arguments. Please specify only a message.".yellow.bold if args.count > 1
+    has_changes, changes = check_local_changes
+    return puts "There are no changes to commit".yellow.bold unless has_changes
+    puts `git add -A`
+    puts `git commit -m "#{args[0]}"`
+    display_log_graph
+    display_current_changes
+    display_sync_status
+  end
+
+
   def pull
     has_changes, changes = check_local_changes
     if has_changes
@@ -211,6 +224,8 @@ class Git
           return
         end
         puts `git rebase #{remote_branch}`
+        #TODO: CONFLICT HANDLING?
+        puts 'TODO: CONFLICT HANDLING?'
         display_log_graph
         display_sync_status
       when :behind
