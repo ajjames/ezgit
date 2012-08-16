@@ -10,6 +10,7 @@ $commands.all << {
       puts "  EZGit info".bold
       $commands.git.log_graph
       $commands.git.branch_list_with_current
+      $commands.git.sync_status
       $commands.git.status(opts)
       puts '________________________________'
     end

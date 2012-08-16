@@ -78,7 +78,6 @@ class Git
     ahead_count = (ahead_match.nil?) ? '0' : ahead_match[1]
     behind_match = stat.match(behind_count_rgx)
     behind_count = (behind_match.nil?) ? '0' : behind_match[1]
-    puts stat
     case
       when ahead_count > '0' && behind_count == '0'
         return :ahead, ahead_count
@@ -93,14 +92,35 @@ class Git
   end
 
 
+  def sync_status
+    puts ''
+    puts 'SYNC STATUS:'.white.bold
+    stat, count = check_remote_status
+    commit_s = (count == 1) ? 'commit' : 'commits'
+    case stat
+      when :ahead
+        puts "  Your #{current_branch.bold + CYAN} branch is ahead of the remote by #{count} #{commit_s}.".cyan
+        puts "    Use 'ez push' to update the remote.".cyan
+      when :behind
+        puts "  Your #{current_branch.bold} branch is behind the remote by #{count} #{commit_s}.".yellow
+        puts "    Use 'ez pull' to get the new changes.".yellow
+      when :rebase
+        puts "  Your #{current_branch} branch has diverged #{count} #{commit_s} from the remote.".red.bold
+        puts "    Use must use git directly to put them back in sync.".red.bold
+      when :no_remote
+        puts "  Your #{current_branch.bold + CYAN} branch does not yet exist on the remote.".cyan
+        puts "    Use 'ez push' to update the remote.".cyan
+      else
+        puts "   Your #{current_branch.bold + GREEN} branch is in sync with the remote.".green
+        puts "    Use 'ez pull' to ensure it stays in sync.".green
+    end
+  end
+
+
   def status(opts)
     ignored = opts[:ignored] ? '--ignored' : ''
     puts ''
     puts 'CURRENT CHANGES:'.white.bold
-    stat, count = check_remote_status
-    puts stat
-    puts count
-    # system('git status -bs')
     stdin, stdout, stderr = Open3.popen3("git status --untracked-files=all --porcelain #{ignored}")
     changes = stdout.readlines
     puts "  No changes.".green unless changes.any?
