@@ -197,6 +197,18 @@ class Git
   end
 
 
+  def goto!(opts, args)
+    return puts "Please specify a commit id.".yellow.bold if args.count < 1
+    return puts "Invalid number of arguments. Please specify only a commit id.".yellow.bold if args.count > 1
+    commit_id = args[0]
+    return puts "Would go to #{commit_id}" if @its_a_dry_run
+    puts "About to go to #{commit_id}. All changes in tracked files will be lost.".red.bold unless opts[:force]
+    run_lambda_with_force_option(opts) do
+      puts `git reset --hard #{commit_id}`
+    end
+  end
+
+
   def checkout(args)
     #TODO: What if the given value is not a valid branch?? You would go headless!
     return puts "Please specify a branch name.".yellow.bold if args.count < 1
