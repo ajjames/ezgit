@@ -41,11 +41,11 @@ class Git
   end
 
 
-  def display_log_graph(count = 5)
-    #TODO: This will always show the top of the tree. What if I'm more than 5 commits down??
+  def display_log_graph(count = 5, show_all = false)
     puts ''
     puts "REPOSITORY TREE".white.bold + "(last #{count} commits)"
-    puts `git log --graph --all --format=format:"#{CYAN}%h #{CLEAR + CYAN}(%cr) #{CYAN}%cn #{CLEAR + WHITE}%s#{CYAN + BOLD}%d#{CLEAR}" --abbrev-commit --date=relative -n #{count}`
+    all = show_all ? '--all' : ''
+    puts `git log --graph #{all} --format=format:"#{CYAN}%h #{CLEAR + CYAN}(%cr) #{CYAN}%cn #{CLEAR + WHITE}%s#{CYAN + BOLD}%d#{CLEAR}" --abbrev-commit --date=relative -n #{count}`
   end
 
 
