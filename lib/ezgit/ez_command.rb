@@ -8,11 +8,11 @@ class EzCommand
 EZGit is a simple interface for working with git repositories.
 
 Usage:
-        ez [options] [commands]
+        ez [<options>] <commands>
 
-  [commands] are:
+  commands are:
 #{subcommand_help_list}
-   [options] are:
+   options are:
 HELP_DESCRIPTION
 		  opt :dry_run_flag, 'Forces all commands to be passive.', short: '-n'
 		  opt :debug, 'Shows command level debug info.', short: '-d'

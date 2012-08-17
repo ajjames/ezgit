@@ -2,7 +2,7 @@ require 'open3'
 
 class Git
 
-  attr_reader :current_branch, :remote_branch, :all_branches
+  attr_reader :current_branch, :remote_branch, :all_branches, :all_uniq_branches
 
   def initialize(global_options)
     @its_a_dry_run = global_options[:dry_run_flag]
@@ -13,7 +13,9 @@ class Git
   def current_branch
     if @current_branch.nil?
       rgx = /.+\/(\w+)/
-      @current_branch = `git symbolic-ref HEAD`.match(rgx)[1]
+      stdin, stdout, stderr = Open3.popen3("git symbolic-ref HEAD")
+      out = stdout.readlines.to_s.match(rgx)
+      @current_branch = (out.nil?) ? '(nobranch)' : out[1]
     end
     return @current_branch
   end
@@ -42,6 +44,20 @@ class Git
   end
 
 
+  def all_uniq_branches
+    if @all_uniq_branches.nil?
+      remove_refs_regx = /([\* ])|(.*\/)/
+      @all_uniq_branches = []
+      all_branches.each do |br|
+        @all_uniq_branches << br.gsub(remove_refs_regx, '')
+      end
+      @all_uniq_branches.uniq!
+      @all_uniq_branches.sort!
+    end
+    return @all_uniq_branches
+  end
+
+
   def display_log_graph(count = 5, show_all = false)
     puts ''
     puts "REPOSITORY TREE".white.bold + "(last #{count} commits)"
@@ -53,19 +69,12 @@ class Git
   def display_branch_list_with_current
     puts ''
     puts 'BRANCHES:'.bold
-    remove_refs_regx = /([\* ])|(.*\/)/
     brs = []
-    all_branches.each do |br|
-      b = br.gsub(remove_refs_regx, '')
+    all_uniq_branches.each do |b|
       #add an indicator if it is the current branch
       b = b.eql?(current_branch) ? "#{b} <-- CURRENT".bold : b
-      brs << b
-    end
-    brs.uniq!
-    brs.sort!
-    # output the list
-    brs.each do |br|
-      puts "  #{br}".cyan
+      # output the list
+      puts "  #{b}".cyan
     end
   end
 
@@ -104,19 +113,19 @@ class Git
     case stat
       when :ahead
         puts "  Your #{current_branch.bold + CYAN} branch is ahead of the remote by #{count} #{commit_s}.".cyan
-        puts "  (Use 'ez sync' to update the remote.)".cyan
+        puts "  (Use 'ez pull' to update the remote.)".cyan
       when :behind
         puts "  Your #{current_branch.bold + YELLOW} branch is behind the remote by #{count} #{commit_s}.".yellow
-        puts "  (Use 'ez sync' to get the new changes.)".yellow
+        puts "  (Use 'ez pull' to get the new changes.)".yellow
       when :rebase
         puts "  Your #{current_branch} branch has diverged #{count} #{commit_s} from the remote.".red.bold
         puts "  (Use must use git directly to put them back in sync.)".red.bold
       when :no_remote
         puts "  Your #{current_branch.bold + CYAN} branch does not yet exist on the remote.".cyan
-        puts "  (Use 'ez sync' to update the remote.)".cyan
+        puts "  (Use 'ez pull' to update the remote.)".cyan
       else
         puts "  Your #{current_branch.bold + GREEN} branch is in sync with the remote.".green
-        puts "  (Use 'ez sync' to ensure it stays in sync.)".green
+        puts "  (Use 'ez pull' to ensure it stays in sync.)".green
     end
   end
 
@@ -132,7 +141,7 @@ class Git
 
   def display_current_changes(opts = nil)
     puts ''
-    puts 'CHANGES TO BE COMMITTED:'.white.bold
+    puts "TO BE COMMITTED ON: #{current_branch}".white.bold
     has_changes, changes = check_local_changes(opts)
     puts "  No changes.".green unless has_changes
     changes.collect! { |line|
@@ -162,17 +171,23 @@ class Git
   end
 
 
+  def prompt_for_y_n
+    begin
+      system("stty raw -echo")
+      input = STDIN.getc
+    ensure
+      system("stty -raw echo")
+    end
+    out = input.to_s.downcase.eql?('y')
+    puts input.to_s
+    return out
+  end
+
+
   def run_lambda_with_force_option(opts)
     unless opts[:force]
       print 'proceed(y/n)? '.bold
-      begin
-        system("stty raw -echo")
-        input = STDIN.getc
-      ensure
-        system("stty -raw echo")
-      end
-      return unless input.to_s.downcase.eql?('y')
-      puts input.to_s
+      return unless prompt_for_y_n
     end
     yield
   end
@@ -209,17 +224,35 @@ class Git
   end
 
 
-  def checkout(args)
-    #TODO: What if the given value is not a valid branch?? You would go headless!
+  def create(opts, args)
     return puts "Please specify a branch name.".yellow.bold if args.count < 1
     return puts "Invalid number of arguments. Please specify only a branch name.".yellow.bold if args.count > 1
+    branch_name = args[0]
+    return puts "Would create branch: #{branch_name}" if @its_a_dry_run
+    `git checkout -b #{branch_name}`
+    display_branch_list_with_current
+    display_current_changes
+  end
+
+
+  def switch(args)
+    return puts "Please specify a branch name.".yellow.bold if args.count < 1
+    return puts "Invalid number of arguments. Please specify only a branch name.".yellow.bold if args.count > 1
+    branch_name = args[0]
+    return puts "Please specify a valid branch." unless all_uniq_branches.include?(branch_name)
+    return puts "Already on branch: #{current_branch.bold}".green if current_branch.eql?(branch_name)
     has_changes, changes = check_local_changes
     if has_changes
-      puts "Cannot switch branches when you have unresolved changes".yellow.bold
+      display_current_changes
+      puts ''
+      puts "  WARNING: You may lose changes if you switch to #{branch_name} without committing.".red.bold
+      print "  Would you still like to switch to the new branch?(y/n)?".red.bold
+      return unless prompt_for_y_n
+      `git checkout #{branch_name}`
       display_current_changes
       return
     end
-    puts `git checkout -f #{args[0]}`
+    puts `git checkout -f #{branch_name}`
   end
 
 
@@ -228,8 +261,9 @@ class Git
     return puts "Invalid number of arguments. Please specify only a message.".yellow.bold if args.count > 1
     has_changes, changes = check_local_changes
     return puts "There are no changes to commit".yellow.bold unless has_changes
+    commit_id = args[0]
     puts `git add -A`
-    puts `git commit -m "#{args[0]}"`
+    puts `git commit -m "#{commit_id}"`
     display_log_graph
     display_current_changes
     display_sync_status
@@ -271,7 +305,7 @@ class Git
     case stat
       when :rebase || :behind
         puts "  The remote has been updated since you began this sync.".yellow.bold
-        puts "  Try running 'ez sync' again".yellow.bold
+        puts "  Try running 'ez pull' again".yellow.bold
         display_sync_status
       when :no_remote || :ahead
         puts `git push -u #{remote_branch.sub('/', ' ')}`

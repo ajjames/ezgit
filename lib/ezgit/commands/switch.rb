@@ -4,6 +4,6 @@ $commands.all << {
     usage: 'ez switch <branch_name>',
     options: [],
     action: lambda do |opts, args|
-      $commands.git.checkout(args)
+      $commands.git.switch(args)
     end
 }
