@@ -3,6 +3,8 @@ require 'open3'
 class Git
 
   attr_reader :current_branch, :remote_branch, :all_branches, :all_uniq_branches
+  @no_branch = '(nobranch)'
+
 
   def initialize(global_options)
     @its_a_dry_run = global_options[:dry_run_flag]
@@ -12,10 +14,9 @@ class Git
 
   def current_branch
     if @current_branch.nil?
-      rgx = /.+\/(\w+)/
-      stdin, stdout, stderr = Open3.popen3("git symbolic-ref HEAD")
-      out = stdout.readlines.to_s.match(rgx)
-      @current_branch = (out.nil?) ? '(nobranch)' : out[1]
+      remove_refs_regex = /.+\/(\w+)/
+      out = `git symbolic-ref HEAD 2>&1`.match(remove_refs_regex)
+      @current_branch = (out.nil?) ? @no_branch : out[1].to_s
     end
     return @current_branch
   end
@@ -81,6 +82,7 @@ class Git
 
   #returns :up_to_date/:no_remote/:rebase/:ahead/:behind, count
   def check_remote_status
+    return :headless if current_branch == @no_branch
     ahead_count_rgx = /.*ahead.(\d+)/
     behind_count_rgx = /.*behind.(\d+)/
     stdin, stdout, stderr = Open3.popen3('git status -bs')
@@ -104,8 +106,6 @@ class Git
 
 
   def display_sync_status
-    #TODO: What if I somehow ended up in a headless state?? Gracefully fail and recommend 'ez switch <branch>'
-    #TODO: Unless you have changes, in which case those should be handled
     puts ''
     puts 'SYNC STATUS:'.white.bold
     stat, count = check_remote_status
@@ -123,6 +123,9 @@ class Git
       when :no_remote
         puts "  Your #{current_branch.bold + CYAN} branch does not yet exist on the remote.".cyan
         puts "  (Use 'ez pull' to update the remote.)".cyan
+      when :headless
+        puts "  You are in a headless state (not on a branch)".red.bold
+        puts "  (Use 'ez create <branch>' to create a branch at this commit.)".red.bold
       else
         puts "  Your #{current_branch.bold + GREEN} branch is in sync with the remote.".green
         puts "  (Use 'ez pull' to ensure it stays in sync.)".green
@@ -294,7 +297,7 @@ class Git
         puts `git reset --hard #{remote_branch}`
         display_log_graph
         display_sync_status
-      else #:up_to_date | :no_remote | :ahead
+      else #:up_to_date | :no_remote | :ahead | :headless
         display_sync_status
     end
   end
@@ -310,7 +313,7 @@ class Git
       when :no_remote || :ahead
         puts `git push -u #{remote_branch.sub('/', ' ')}`
         display_sync_status
-      else #:up_to_date
+      else #:up_to_date | :headless
         display_sync_status
     end
   end
