@@ -5,7 +5,8 @@ class Git
   attr_reader :current_branch, :remote_branch, :all_branches
 
   def initialize(global_options)
-    @dry_run = global_options[:dry_run] ? '-n' : ''
+    @its_a_dry_run = global_options[:dry_run_flag]
+    @dry_run_flag = @its_a_dry_run ? '-n' : ''
   end
 
 
@@ -149,7 +150,7 @@ class Git
 
   def clone(args)
     return puts 'invalid number of arguments. Requires a source. (Destination is optional.)' if args.count < 1 || args.count > 2
-    return if not @dry_run.empty?
+    return if @its_a_dry_run
     puts out = `git clone #{args.first} #{args[1]}`
     repo_name = args[1] || out.split('\'')[1]
     puts 'You have created a copy of ' + args.first.to_s.bold + ' in the ' + repo_name.bold + ' directory.' if $? == 0
@@ -157,13 +158,11 @@ class Git
 
 
   def clean
-    puts `git clean -df #{@dry_run}`
+    puts `git clean -df #{@dry_run_flag}`
   end
 
 
-  def clean!(opts)
-    puts `git  clean -dfxn`
-    return unless @dry_run.empty?
+  def run_lambda_with_force_option(opts)
     unless opts[:force]
       print 'proceed(y/n)? '.bold
       begin
@@ -175,14 +174,26 @@ class Git
       return unless input.to_s.downcase.eql?('y')
       puts input.to_s
     end
-    reset_hard
-    puts `git  clean -dfx #{@dry_run}`
+    yield
   end
 
 
-  def reset_hard
-    return if not @dry_run.empty?
-    puts `git reset --hard`
+  def clean!(opts)
+    puts `git  clean -dfxn`
+    return if @its_a_dry_run
+    run_lambda_with_force_option(opts) do
+      reset_hard({force: true})
+      puts `git  clean -dfx #{@dry_run}`
+    end
+  end
+
+
+  def reset_hard!(opts)
+    return if @its_a_dry_run
+    puts 'All changes in tracked files will be lost.'.red.bold unless opts[:force]
+    run_lambda_with_force_option(opts) do
+      puts `git reset --hard`
+    end
   end
 
 
@@ -214,11 +225,11 @@ class Git
 
 
   def pull
-    `git fetch -p #{@dry_run}`
+    `git fetch -p #{@dry_run_flag}`
     stat, count = check_remote_status
     case stat
       when :rebase
-        unless @dry_run.empty?
+        if @its_a_dry_run
           puts 'would merge changes'
           display_sync_status
           return
@@ -226,17 +237,17 @@ class Git
         puts `git rebase #{remote_branch}`
         #TODO: CONFLICT HANDLING?
         puts 'TODO: CONFLICT HANDLING?'
-      display_log_graph
-      display_sync_status
+        display_log_graph
+        display_sync_status
       when :behind
-        unless @dry_run.empty?
+        if @its_a_dry_run
           puts "would branch to #{remote_branch}"
           display_sync_status
           return
         end
         puts `git reset --hard #{remote_branch}`
-      display_log_graph
-      display_sync_status
+        display_log_graph
+        display_sync_status
       else #:up_to_date | :no_remote | :ahead
         display_sync_status
     end
