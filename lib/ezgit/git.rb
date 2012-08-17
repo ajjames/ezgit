@@ -69,7 +69,7 @@ class Git
 
   def display_branch_list_with_current
     puts ''
-    puts 'BRANCHES:'.bold
+    puts '  BRANCHES:'.bold
     brs = []
     all_uniq_branches.each do |b|
       #add an indicator if it is the current branch
@@ -77,6 +77,16 @@ class Git
       # output the list
       puts "  #{b}".cyan
     end
+  end
+
+
+  def info(opts=nil)
+    puts '________________________________'
+    $commands.git.display_log_graph
+    $commands.git.display_branch_list_with_current
+    $commands.git.display_current_changes(opts)
+    $commands.git.display_sync_status
+    puts '________________________________'
   end
 
 
@@ -107,7 +117,7 @@ class Git
 
   def display_sync_status
     puts ''
-    puts 'SYNC STATUS:'.white.bold
+    puts '  SYNC STATUS:'.white.bold
     stat, count = check_remote_status
     commit_s = (count == 1) ? 'commit' : 'commits'
     case stat
@@ -144,7 +154,7 @@ class Git
 
   def display_current_changes(opts = nil)
     puts ''
-    puts "TO BE COMMITTED ON: #{current_branch}".white.bold
+    puts "  TO BE COMMITTED ON: #{current_branch}".white.bold
     has_changes, changes = check_local_changes(opts)
     puts "  No changes.".green unless has_changes
     changes.collect! { |line|
@@ -274,7 +284,11 @@ class Git
 
 
   def pull
-    `git fetch -p #{@dry_run_flag}`
+    stdin, stdout, stderr = Open3.popen3("git fetch -p #{@dry_run_flag}")
+    err = stderr.readlines
+    out = stdout.readlines.join('')
+    puts out + err.join('')
+    return if err.any?
     stat, count = check_remote_status
     case stat
       when :rebase
@@ -286,20 +300,15 @@ class Git
         puts `git rebase #{remote_branch}`
         #TODO: CONFLICT HANDLING?
         puts 'TODO: CONFLICT HANDLING?'
-        display_log_graph
-        display_sync_status
       when :behind
         if @its_a_dry_run
-          puts "would branch to #{remote_branch}"
+          puts "would reset branch to #{remote_branch}"
           display_sync_status
           return
         end
         puts `git reset --hard #{remote_branch}`
-        display_log_graph
-        display_sync_status
-      else #:up_to_date | :no_remote | :ahead | :headless
-        display_sync_status
     end
+    info
   end
 
 
