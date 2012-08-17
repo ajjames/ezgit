@@ -314,16 +314,15 @@ class Git
 
   def push
     stat, count = check_remote_status
-    case stat
-      when :rebase || :behind
-        puts "  The remote has been updated since you began this sync.".yellow.bold
-        puts "  Try running 'ez pull' again".yellow.bold
-        display_sync_status
-      when :no_remote || :ahead
-        puts `git push -u #{remote_branch.sub('/', ' ')}`
-        display_sync_status
-      else #:up_to_date | :headless
-        display_sync_status
+    if (stat == :rebase) || (stat == :behind)
+      puts "  The remote has been updated since you began this sync.".yellow.bold
+      puts "  Try running 'ez pull' again".yellow.bold
+      display_sync_status
+    elsif (stat == :no_remote) || (stat == :ahead)
+      puts `git push -u #{remote_branch.sub('/', ' ')}`
+      display_sync_status
+    else #:up_to_date | :headless
+      display_sync_status
     end
   end
 
