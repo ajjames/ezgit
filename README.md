@@ -9,17 +9,19 @@
 
 ## DESCRIPTION
 
-EZGit is a command-line interface based on Ruby. The **goal** of **EZGit** is to simplify the daily git tasks used in a multi-team enterprise development environment without the need to fully understand the full complex beauty of Git. With EZGit, committers with any level of Git knowledge can work in the repo with confidence and consistency.
+I like the Git source control system. It's truly awesome. And like the first time you disassembled your dad's VCR only to be stumped by all those gears and wires, Git probably gave you a bit of a brain-bending whirl when you first looked at it too. There is so much that Git can do, but only so little that you really need it to do. **EZGit** wants to help.
+
+EZGit is a command-line interface written in Ruby and distributed as a gem. **The goal of EZGit** is to simplify your daily source control use cases without the need to fully gaze upon the complex beauty that is Git. With EZGit, committers with any level of Git knowledge can work in the repo with confidence and consistency.
 
 EZGit abstracts away many Git concepts that are consistent sources of confusion. Concepts such as...
-* _**Where do branches live? On my local machine or on the remote?**_ Who cares? EZGit handles it for you. 
-* _**What's the difference between the working directory, the stage(or index), and the local repo?**_ I could spend hours explaining it to you, but if you don't really want to know, EZGit is here to make that stuff go away.
+* _**Where do branches live? On my local machine or on the remote?**_ Who cares? EZGit handles it for you.
+* _**What's the difference between the working directory, the stage(or index), and the local repo?**_ I could spend hours explaining it to you, but if you don't really want to know, EZGit is here to make it so you don't have to know.
+* _**When would I need to do a 'git reset --hard', as opposed to '--soft' or '--mixed'?**_ If you're asking about staging files, stop thinking about that. You have better things to do. Just make your files and folders look the way you want and EZGit will take care of the rest.
+* _**But I'm confused about the differences between git checkout, reset, revert, and other commands. Do some of these do more than one thing??**_  I know. I hear your pain. That's why EZGit replaces git's complex and overloaded commands with simple, clean, intentional, ruby-styled names. If any single git command has multiple, yet different _common_ uses, rest assured that EZGit provides an unique, easy-to-understand command for that task.
 
-EZGit replaces git's complex and overloaded commands with simple, intentional, ruby-styled names. 
+Ready to try, EZGit? Hold on, Cowboy. It ain't done yet. Go ahead and use it, but be sure to check back often for updates. In the future, EZGit will implement a branching strategy that has been honed and refined over the last two years by a large agile enterprise development shop. The concepts of merging (and rebasing) will be equally simplified so that you can concentrate on your code, and not on, "how the heck do I rebase and then --no-ff merge my changes?!" And, hey, while you're checking things out, drop an occasional line if you find a bug. That'd be nice.
 
-In future updates, EZGit will implement a branching strategy that has been honed and refined over the last two years by a large agile enterprise development shop. The concepts of merging (and rebasing) will be equally simplified so that you can concentrate on your code, and not on, "how the heck do I merge these changes?!"
-
-Best of all, EZGit is still Git. So if you are a Git-Fu master, you can go back to using your favorite, obtuse Git commands at any time. They'll always be there waiting for you when you need to do the complex stuff.
+Best of all, EZGit is still Git. So if you are a Git-Fu master, you can always go back to using your favorite, obtusely overloaded Git commands at any time. They'll always be there waiting for you at those times when you absolutely need to cherry-pick your fixes from branchB onto branchA, interactively rebase & squash directly from branchC in your buddy's repo, and finally, ours-merge them into master ...and other stuff like that.
 
 If you try EZGit and find that it doesn't quite work for you, drop me a line and let me know why. I'm happy to look at other use cases and consider including them in future updates.
 
