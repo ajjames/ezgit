@@ -74,9 +74,9 @@ class Git
 
   def display_log_graph(count = 5, show_all = false)
     puts ''
-    puts "REPOSITORY TREE".white.bold + "(last #{count} commits)"
+    puts "REPOSITORY TREE".bold + "(last #{count} commits)"
     all = show_all ? '--all' : ''
-    stdin, stdout, stderr = Open3.popen3("git log --graph #{all} --format=format:\"#{CYAN}%h #{CLEAR + CYAN}(%cr) #{CYAN}%cn #{CLEAR + WHITE}%s#{CYAN + BOLD}%d#{CLEAR}\" --abbrev-commit --date=relative -n #{count}")
+    stdin, stdout, stderr = Open3.popen3("git log --graph #{all} --format=format:\"#{CYAN}%h #{CLEAR + CYAN}(%cr) #{CYAN}%cn #{CLEAR}%s#{CYAN + BOLD}%d#{CLEAR}\" --abbrev-commit --date=relative -n #{count}")
     err = stderr.readlines
     return puts 'There is no history yet.'.cyan.bold if err.any?
     puts err.join('') + stdout.readlines.join('')
@@ -133,7 +133,7 @@ class Git
 
   def display_sync_status
     puts ''
-    puts '  SYNC STATUS:'.white.bold
+    puts '  SYNC STATUS:'.bold
     stat, count = check_remote_status
     commit_s = (count == 1) ? 'commit' : 'commits'
     case stat
@@ -171,7 +171,7 @@ class Git
 
   def display_current_changes(opts = nil)
     puts ''
-    puts "  TO BE COMMITTED ON: #{current_branch}".white.bold
+    puts "  TO BE COMMITTED ON: #{current_branch}".bold
     has_changes, changes = check_local_changes(opts)
     puts "  No changes.".green unless has_changes
     changes.collect! { |line|
