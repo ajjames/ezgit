@@ -387,6 +387,7 @@ class Git
       puts "  Try running 'ez pull' again".yellow.bold
     elsif stat.eql?(:no_remote) || stat.eql?(:ahead)
       puts `git push -u #{remote_branch.sub('/', ' ')}`
+      refresh_branches
     elsif stat.eql?(:headless)
       puts '  You cannot push unless you are on a branch.'.red.bold
     else
