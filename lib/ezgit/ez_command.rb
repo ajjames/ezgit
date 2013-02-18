@@ -8,7 +8,13 @@ class EzCommand
 EZGit is a simple interface for working with git repositories.
 
 Usage:
+        ezgit [<options>] <commands>
+              - or -
         ez [<options>] <commands>
+              - or -
+        eg [<options>] <commands>
+              - or -
+        gt [<options>] <commands>
 
   commands are:
 #{subcommand_help_list}

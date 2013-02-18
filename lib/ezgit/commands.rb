@@ -36,9 +36,9 @@ class Commands
         matched = true
         @cmd_opts = Trollop::options do
           usage = current[:usage]
-          usage ||= "ez #{current[:name].to_s} [<options>]"
+          usage ||= "ezgit #{current[:name].to_s} [<options>]"
           banner <<-HELP_DESCRIPTION
-command: ez #{current[:name].to_s}\n
+command: ezgit #{current[:name].to_s}\n
 #{current[:help].to_s}
 
 Usage:

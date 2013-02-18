@@ -12,5 +12,8 @@ Gem::Specification.new do |s|
   s.email        = 'ajjames@msn.com'
   s.homepage     = 'http://github.com/ajjames/ezgit'
   s.license      = 'MIT'
+  s.executables  << 'ezgit'
   s.executables  << 'ez'
+  s.executables  << 'eg'
+  s.executables  << 'gt'
 end
