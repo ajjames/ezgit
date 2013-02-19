@@ -279,7 +279,7 @@ class Processor
     return puts "Cannot delete ".red + branch_name.red.bold + " while you are using it. Please switch to another branch and try again.".red if branches.include?(current_branch)
     return puts "Branch does not exist: ".red + branch_name.red.bold unless branches.any?
     return puts "Would completely delete branches: #{branches.join(',')}" if @dry_run
-    print "  Are you sure you want to delete '#{branch_name}'(y/n)?".red.bold
+    print "  Are you sure you want to delete '#{branch_name}'(y/n)?".red.bold unless no_prompt
     return unless run_lambda_with_prompt do
       puts `git push --delete #{remote_name.sub('/', ' ')}` if is_remote
       puts `git branch -D #{branch_name}` if is_local

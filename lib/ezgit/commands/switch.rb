@@ -1,9 +1,9 @@
 $commands.all << {
     name: 'switch!',
     help: 'Abandon all changes and switch to the given branch.',
-    usage: 'ez switch! <branch_name>',
+    usage: '',
     options: [
-        [:force, 'Automatically approve and bypass the confirmation prompt.', short: '-f']
+        [:force, 'Automatically approve and bypass the confirmation prompt.', short: '-f', default: true]
     ],
     action: lambda do |opts, args|
       Processor.new(opts).switch!('switch!', args)
@@ -13,10 +13,10 @@ $commands.all << {
 
 $commands.all << {
     name: 'switch',
-    help: 'Switch to the given branch if there are not changes.',
+    help: 'Abandon all changes and switch to the given branch.',
     usage: 'ez switch <branch_name>',
     options: [],
     action: lambda do |opts, args|
-      Processor.new(opts).switch!('switch',args)
+      Processor.new(opts).switch!('switch!', args)
     end
 }
