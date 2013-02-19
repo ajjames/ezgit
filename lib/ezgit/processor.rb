@@ -1,14 +1,15 @@
 require 'open3'
 
-class Git
+class Processor
 
-  attr_reader :current_branch, :remote_branch, :all_branches, :all_uniq_branches
+  attr_reader :current_branch, :remote_branch, :all_branches, :all_uniq_branches, :no_prompt, :dry_run, :dry_run_flag
   NO_BRANCH = '(nobranch)'
 
 
   def initialize(global_options)
-    @its_a_dry_run = global_options[:dry_run_flag]
-    @dry_run_flag = @its_a_dry_run ? '-n' : ''
+    @dry_run = global_options[:dry_run]
+    @dry_run_flag = @dry_run ? '-n' : ''
+    @no_prompt = global_options[:force]
   end
 
 
@@ -96,12 +97,12 @@ class Git
   end
 
 
-  def info(opts=nil)
+  def info
     puts '________________________________'
-    $commands.git.display_log_graph
-    $commands.git.display_branch_list_with_current
-    $commands.git.display_current_changes(opts)
-    $commands.git.display_sync_status
+    display_log_graph
+    display_branch_list_with_current
+    display_current_changes
+    display_sync_status
     puts '________________________________'
   end
 
@@ -189,23 +190,22 @@ class Git
 
   def clone(args)
     return puts 'invalid number of arguments. Requires a source. (Destination is optional.)' if args.count < 1 || args.count > 2
-    return if @its_a_dry_run
+    return if @dry_run
     puts out = `git clone #{args.first} #{args[1]}`
     repo_name = args[1] || out.split('\'')[1]
     puts 'You have created a copy of ' + args.first.to_s.bold + ' in the ' + repo_name.bold + ' directory.' if $? == 0
   end
 
 
-  def clean!(wipe_ignored, opts)
-    x = wipe_ignored ? 'x' : ''
-    stdin, stdout, stderr = Open3.popen3("git clean -dfn#{x}")
-    out = stderr.readlines
-    err = stdout.readlines.join('')
-    puts err.red.bold unless opts[:force]
+  def clean!(wipe_ignored)
+    command = 'git clean -df'
+    command += 'x' if wipe_ignored
+    out, err = call_command_with_out_error(command + 'n')
+    puts err.red.bold unless no_prompt
     return puts 'Nothing to clean.'.green if err.empty?
-    return if @its_a_dry_run
-    run_lambda_with_force_option(opts) do
-      puts `git clean -df#{x} #{@dry_run}`
+    return if dry_run
+    run_lambda_with_prompt do
+      puts `#{command}`
     end
   end
 
@@ -223,48 +223,48 @@ class Git
   end
 
 
-  def run_lambda_with_force_option(opts)
-    unless opts[:force]
-      print 'proceed(y/n)? '.bold
+  def run_lambda_with_prompt(opts = nil)
+    unless no_prompt
+      puts 'proceed(y/n)? '.bold
       return unless prompt_for_y_n
     end
     yield
   end
 
 
-  def reset_hard!(opts)
-    return if @its_a_dry_run
-    puts 'All changes in tracked files will be lost.'.red.bold unless opts[:force]
-    run_lambda_with_force_option(opts) do
+  def reset_hard!
+    return if @dry_run
+    puts 'All changes in tracked files will be lost.'.red.bold unless no_prompt
+    run_lambda_with_prompt do
       puts `git reset --hard`
     end
   end
 
 
-  def goto!(opts, args)
+  def goto!(args)
     return puts "Please specify a commit id.".yellow.bold if args.count < 1
     return puts "Invalid number of arguments. Please specify only a commit id.".yellow.bold if args.count > 1
     commit_id = args[0].to_s
-    return puts "Would go to #{commit_id}" if @its_a_dry_run
-    puts "About to go to #{commit_id}. All changes in tracked files will be lost.".red.bold unless opts[:force]
-    run_lambda_with_force_option(opts) do
+    return puts "Would go to #{commit_id}" if dry_run
+    puts "About to go to #{commit_id}. All changes in tracked files will be lost.".red.bold unless no_prompt
+    run_lambda_with_prompt do
       puts `git reset --hard #{commit_id}`
     end
   end
 
 
-  def create(opts, args)
-    return puts "Please specify a branch name.".yellow.bold if args.count < 1
-    return puts "Invalid number of arguments. Please specify only a branch name.".yellow.bold if args.count > 1
+  def create(args)
+    return puts 'Please specify a branch name.'.yellow.bold if args.count < 1
+    return puts 'Invalid number of arguments. Please specify only a branch name.'.yellow.bold if args.count > 1
     branch_name = args[0].to_s
-    return puts "Would create branch: #{branch_name}" if @its_a_dry_run
+    return puts "Would create branch: #{branch_name}" if dry_run
     `git checkout -b #{branch_name}`
     display_branch_list_with_current
     display_current_changes
   end
 
 
-  def delete!(opts, args)
+  def delete!(args)
     return puts "Please specify a branch name.".yellow.bold if args.count < 1
     return puts "Invalid number of arguments. Please specify only a branch name.".yellow.bold if args.count > 1
     branch_name = args[0].to_s
@@ -278,9 +278,9 @@ class Git
     branches << remote_name if is_remote
     return puts "Cannot delete ".red + branch_name.red.bold + " while you are using it. Please switch to another branch and try again.".red if branches.include?(current_branch)
     return puts "Branch does not exist: ".red + branch_name.red.bold unless branches.any?
-    return puts "Would completely delete branches: #{branches.join(',')}" if @its_a_dry_run
+    return puts "Would completely delete branches: #{branches.join(',')}" if @dry_run
     print "  Are you sure you want to delete '#{branch_name}'(y/n)?".red.bold
-    return unless run_lambda_with_force_option(opts) do
+    return unless run_lambda_with_prompt do
       puts `git push --delete #{remote_name.sub('/', ' ')}` if is_remote
       puts `git branch -D #{branch_name}` if is_local
       refresh_branches
@@ -293,7 +293,7 @@ class Git
 #  :switch  - switch if there are not changes. Otherwise halt!
 #  :switch! - clobber all files before switching
 #  :move    - move files with switch
-  def switch!(opts, args)
+  def switch!(mode, args)
     return puts "Please specify a branch name.".yellow.bold if args.count < 1
     return puts "Invalid number of arguments. Please specify only a branch name.".yellow.bold if args.count > 1
     branch_name = args[0].to_s
@@ -301,12 +301,12 @@ class Git
     return puts "Already on branch: #{current_branch.bold}".green if current_branch.eql?(branch_name)
     has_changes, changes = check_local_changes
     #move files with switch
-    if opts[:move]
+    if mode == 'move'
       x = `git checkout #{branch_name}`
       return
     end
     #switch if there are not changes. Otherwise halt!
-    if has_changes && opts[:switch]
+    if has_changes && mode == 'switch'
       display_current_changes
       puts "  Cannot switch branches when you have unresolved changes".red
       puts "  Use ".red + "'ez switch! <branch>'".red.bold + " to abandon your changes and switch anyway,".red
@@ -315,14 +315,14 @@ class Git
     end
     #clobber all files before switching
     #respect the -f option
-    if has_changes && opts[:switch!]
-      unless opts[:force]
+    if has_changes && mode == 'switch!'
+      unless no_prompt
         display_current_changes
         puts ''
         print "  WARNING: You may lose changes if you switch branches without committing.".red.bold
       end
-      return unless run_lambda_with_force_option(opts) do
-        opts[:force] = true
+      return unless run_lambda_with_prompt do
+        @no_prompt = true
         x = `git clean -df`
         x = `git checkout -f #{branch_name}`
         return
@@ -356,7 +356,7 @@ class Git
     stat, count = check_remote_status
     case stat
       when :rebase
-        if @its_a_dry_run
+        if @dry_run
           puts 'would merge changes'
           display_sync_status
           return
@@ -365,7 +365,7 @@ class Git
         #TODO: CONFLICT HANDLING?
         puts 'TODO: CONFLICT HANDLING?'
       when :behind
-        if @its_a_dry_run
+        if @dry_run
           puts "would reset branch to #{remote_branch}"
           display_sync_status
           return
@@ -396,5 +396,15 @@ class Git
     info
   end
 
+
+  private
+
+
+  def call_command_with_out_error(command)
+    stdin, stdout, stderr = Open3.popen3(command)
+    out = stderr.readlines.join('')
+    err = stdout.readlines.join('')
+    return out, err
+  end
 
 end

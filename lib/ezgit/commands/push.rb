@@ -3,6 +3,6 @@ $commands.all << {
     help: 'Pushes the current branch changes to the remote.',
     options: [],
     action: lambda do |opts, args|
-      $commands.git.push
+      Processor.new(opts).push
     end
 }

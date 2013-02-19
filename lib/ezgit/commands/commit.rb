@@ -4,6 +4,6 @@ $commands.all << {
     usage: 'ez commit "message"',
     options: [],
     action: lambda do |opts, args|
-      $commands.git.commit(args)
+      Processor.new(opts).commit(args)
     end
 }

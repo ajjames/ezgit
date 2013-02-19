@@ -7,7 +7,8 @@ $commands.all << {
         [:number, 'Number of entries to display.', short: '-n', default:20]
     ],
     action: lambda do |opts, args|
-      count = args[0] || 20
-      $commands.git.display_log_graph(opts[:number], !opts[:current])
+      count = opt[:number]
+      show_all = !opts[:current]
+      Processor.new(opts).display_log_graph(count, show_all)
     end
 }

@@ -4,7 +4,6 @@ $commands.all << {
     usage: 'ez move <branch_name>',
     options: [],
     action: lambda do |opts, args|
-      opts[:move] = true
-      $commands.git.switch!(opts, args)
+      Processor.new(opts).switch!('move', args)
     end
 }

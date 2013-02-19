@@ -4,6 +4,6 @@ $commands.all << {
     usage: 'ez create <branch_name>',
     options: [],
     action: lambda do |opts, args|
-      $commands.git.create(opts,args)
+      Processor.new(opts).create(args)
     end
 }

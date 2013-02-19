@@ -1,8 +1,6 @@
-require 'ezgit/git'
-
 class Commands
 
-  attr_accessor :all, :symbols, :names, :help_list, :options, :git
+  attr_accessor :all, :symbols, :names, :help_list, :options
 
 
   def initialize
@@ -28,7 +26,6 @@ class Commands
 
 
   def process
-    @git = Git.new(@options)
     @cmd = ARGV.shift
     matched = false
     @all.each do |current|

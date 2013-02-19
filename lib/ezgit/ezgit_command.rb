@@ -1,6 +1,6 @@
 require 'ezgit/version'
 
-class EzCommand
+class EzgitCommand
 	def self.options(subcommand_names, subcommand_help_list)
 		return Trollop::options do
 		  version Ezgit::VERSION
@@ -20,7 +20,8 @@ Usage:
 #{subcommand_help_list}
    options are:
 HELP_DESCRIPTION
-		  opt :dry_run_flag, 'Forces all commands to be passive.', short: '-n'
+		  opt :dry_run, 'Makes all commands passive.', short: '-n'
+      opt :force, 'Forces all prompting off. Use ! at end of command name to do the same.', short: '-f', default: false
 		  opt :debug, 'Shows command level debug info.', short: '-d'
 		  stop_on subcommand_names
 		end

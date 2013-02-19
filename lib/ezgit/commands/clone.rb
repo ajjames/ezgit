@@ -4,6 +4,6 @@ $commands.all << {
     usage: 'ez clone <source_url> [<destination_directory>]',
     options: [],
     action: lambda do |opts, args|
-      $commands.git.clone(args)
+      Processor.new(opts).clone(args)
     end
 }

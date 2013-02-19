@@ -1,22 +1,21 @@
+require 'ezgit/processor'
+
 $commands.all << {
-    name: 'reset!',
+    name: 'scrub!',
     help: 'Bypasses the prompt.',
-    usage: '',
     options: [
         [:force, 'Automatically approve and bypass the confirmation prompt.', short: '-f', default: true]
     ],
     action: lambda do |opts, args|
-      Processor.new(opts).reset_hard!
+      Processor.new(opts).clean!(true)
     end
 }
 
-
 $commands.all << {
-    name: 'reset',
-    help: 'Deletes changes in all tracked files. Untracked files will not be affected.',
-    usage: '',
+    name: 'scrub',
+    help: 'Wipes untracked files including ignored files.',
     options: [],
     action: lambda do |opts, args|
-      Processor.new(opts).reset_hard!
+      Processor.new(opts).clean!(true)
     end
 }

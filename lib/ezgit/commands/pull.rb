@@ -3,6 +3,6 @@ $commands.all << {
     help: 'Pulls the latest changes from the remote.',
     options: [],
     action: lambda do |opts, args|
-      $commands.git.pull
+      Processor.new(opts).pull
     end
 }
