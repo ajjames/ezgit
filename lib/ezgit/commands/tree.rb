@@ -7,7 +7,7 @@ $commands.all << {
         [:number, 'Number of entries to display.', short: '-n', default:20]
     ],
     action: lambda do |opts, args|
-      count = opt[:number]
+      count = opts[:number]
       show_all = !opts[:current]
       Processor.new(opts).display_log_graph(count, show_all)
     end
