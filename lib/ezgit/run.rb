@@ -1,4 +1,4 @@
-if RUBY_PLATFORM =~ /mswin/
+if RUBY_PLATFORM =~ /mswin/ or RUBY_PLATFORM =~ /mingw32/
   require 'ezgit/string_no_color'
 else
   require 'ezgit/string'
