@@ -140,23 +140,23 @@ class Processor
     case stat
       when :ahead
         puts "  Your #{current_branch.bold + CYAN} branch is ahead of the remote by #{count} #{commit_s}.".cyan
-        puts "  (Use 'ez pull' to update the remote.)".cyan
+        puts "  (Use 'ezgit pull' to update the remote.)".cyan
       when :behind
         puts "  Your #{current_branch.bold + YELLOW} branch is behind the remote by #{count} #{commit_s}.".yellow
-        puts "  (Use 'ez pull' to get the new changes.)".yellow
+        puts "  (Use 'ezgit pull' to get the new changes.)".yellow
       when :rebase
         puts "  Your #{current_branch} branch has diverged #{count} #{commit_s} from the remote.".red.bold
         puts "  (Use must use git directly to put them back in sync.)".red.bold
       when :no_remote
         puts "  Your #{current_branch.bold + CYAN} branch does not yet exist on the remote.".cyan
-        puts "  (Use 'ez pull' to update the remote.)".cyan
+        puts "  (Use 'ezgit pull' to update the remote.)".cyan
       when :headless
         puts "  You are in a headless state (not on a branch)".red.bold
-        puts "  (Use 'ez create <branch>' to create a branch at this commit,".red.bold
-        puts "   or use 'ez switch <branch>' to switch to a branch.)".red.bold
+        puts "  (Use 'ezgit create <branch>' to create a branch at this commit,".red.bold
+        puts "   or use 'ezgit switch <branch>' to switch to a branch.)".red.bold
       else
         puts "  Your #{current_branch.bold + GREEN} branch is in sync with the remote.".green
-        puts "  (Use 'ez pull' to ensure it stays in sync.)".green
+        puts "  (Use 'ezgit pull' to ensure it stays in sync.)".green
     end
   end
 
@@ -309,8 +309,8 @@ class Processor
     if has_changes && mode == 'switch'
       display_current_changes
       puts "  Cannot switch branches when you have unresolved changes".red
-      puts "  Use ".red + "'ez switch! <branch>'".red.bold + " to abandon your changes and switch anyway,".red
-      puts "  or use ".red + "'ez move <branch>'".red.bold + " to move your changes and switch.".red
+      puts "  Use ".red + "'ezgit switch! <branch>'".red.bold + " to abandon your changes and switch anyway,".red
+      puts "  or use ".red + "'ezgit move <branch>'".red.bold + " to move your changes and switch.".red
       return
     end
     #clobber all files before switching
@@ -384,7 +384,7 @@ class Processor
     stat, count = check_remote_status
     if stat.eql?(:rebase) || stat.eql?(:behind)
       puts "  The remote has been updated since you began this sync.".yellow.bold
-      puts "  Try running 'ez pull' again".yellow.bold
+      puts "  Try running 'ezgit pull' again".yellow.bold
     elsif stat.eql?(:no_remote) || stat.eql?(:ahead)
       puts `git push -u #{remote_branch.sub('/', ' ')}`
       refresh_branches
