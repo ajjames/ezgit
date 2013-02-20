@@ -9,6 +9,6 @@ $commands.all << {
     action: lambda do |opts, args|
       count = opts[:number]
       show_all = !opts[:current]
-      Processor.new(opts).display_log_graph(count, show_all)
+      Processor.new(opts).tree(count, show_all)
     end
 }
